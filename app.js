@@ -1,6 +1,9 @@
 const express = require("express");
-const search = require("./API/search")
+const itemSearch = require("./API/itemSearch")
+const itemDataSearch = require("./API/itemDataSearch")
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 // const { Employee, Department } = require("./models");
 const Sequelize = require("sequelize");
 
@@ -10,8 +13,8 @@ const sequelize = new Sequelize("tmu", "root", "nork1120", {
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
 });
 // 
-app.use("/API/search", search);
-
+app.use("/API/search", itemSearch);
+app.use("/API/search", itemDataSearch);
 // 在开始服务器前同步所有模型(Model)
 sequelize.sync().then(() => {
     app.listen(8000, () => {
