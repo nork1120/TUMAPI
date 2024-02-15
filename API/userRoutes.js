@@ -10,6 +10,7 @@ const sequelize = new Sequelize("tmu", "root", "nork1120", {
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
 
+// Middleware
 router.use((req, res, next) => {
   console.log("正在經過一個使用者Middleware...");
   next();
