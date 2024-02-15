@@ -14,44 +14,27 @@ const sequelize = new Sequelize("tmu", "root", "nork1120", {
 
 
 router.post("/itemDataSearch", async (req, res) => {
-    const findResult = await sequelize.query("SELECT items.id,items.`name`,items.model,items.img_path,items.note ,items_category.category_name,items.category_id FROM items JOIN items_category ON items.category_id = items_category.id  WHERE  `items`.`available` = 1   AND items.id IN ( " + req.body.id.join(",") + ")   AND NOT EXISTS (  SELECT  	*   FROM  	borrow_order_item   WHERE  	`borrow_order_item`.`borrow_end` > " + "\"" + req.body.borrow_start + "\"" + "   AND `borrow_order_item`.`borrow_start` < " + "\"" + req.body.borrow_end + "\"" + " AND `borrow_order_item`.`item_id` = `items`.`id` AND `borrow_order_item`.`status` > 0   );")
+
+
+
+    // const findResult = await sequelize.query("SELECT items.id,items.`name`,items.model,items.img_path,items.note ,items_category.category_name,items.category_id FROM items JOIN items_category ON items.category_id = items_category.id  WHERE  `items`.`available` = 1   AND items.id IN ( " + req.body.id.join(",") + ")   AND NOT EXISTS (  SELECT  	*   FROM  	borrow_order_item   WHERE  	`borrow_order_item`.`borrow_end` > " + "\"" + req.body.borrow_start + "\"" + "   AND `borrow_order_item`.`borrow_start` < " + "\"" + req.body.borrow_end + "\"" + " AND `borrow_order_item`.`item_id` = `items`.`id` AND `borrow_order_item`.`status` > 0   )ORDER BY items.category_id DESC;")
+    const findResult = await sequelize.query("SELECT   `items`.`id`,   `items`.`name`,   `items`.`model`,   `items`.`img_path`,   `items`.`note`,   `items`.`category_id`,   `items_category`.`category_name`,   FORMAT (       (           SELECT               COUNT(*)           FROM               `borrow_order_item`           WHERE               `borrow_order_item`.`borrow_end` >" + "\"" + req.body.borrow_start + "\"" + " AND `borrow_order_item`.`borrow_start` < " + "\"" + req.body.borrow_end + "\"" + " AND `borrow_order_item`.`item_id` = `items`.`id`               AND `borrow_order_item`.`status` > 0       ),       0   ) AS `duplicated`,   FORMAT (       (           SELECT               COUNT(*)           FROM               `borrow_order_item`           WHERE               `borrow_order_item`.`borrow_end` > NULL AND `borrow_order_item`.`borrow_start` < NULL AND `borrow_order_item`.`item_id` = `items`.`id`               AND `borrow_order_item`.`status` > 0       ),       0   ) AS `off_hour_times`,   `items`.`borrow_times_off_hour` FROM   `items`   JOIN `items_category` ON `items`.`category_id` = `items_category`.`id` WHERE  items.id IN ( " + req.body.id.join(",") + ")    AND `items`.`available` = 1;")
     let data = findResult[0];
-    let arrs = {};
-    data.forEach(arr => {
-        if (arrs[`category_id${arr.category_id}`] == undefined) {
-            // arrs[`K${arr.category_id}`] = {
-            //     category_name: arr.category_name,
-            //     data: [{
-            //         id: arr.id,
-            //         name: arr.name,
-            //         model: arr.model,
-            //         img_path: arr.img_path,
-            //         note: arr.note
-            //     }]
-            // }
-            arrs[`category_id${arr.category_id}`] = {
-                category: arr.category_name, data: [{
-                    id: arr.id,
-                    name: arr.name,
-                    model: arr.model,
-                    img_path: arr.img_path,
-                    note: arr.note
-                }]
-            };
-        } else {
-            arrs[`category_id${arr.category_id}`].data.push({
-                id: arr.id,
-                name: arr.name,
-                model: arr.model,
-                img_path: arr.img_path,
-                note: arr.note
-            })
+    // 使用 reduce 將資料按 category_name 分組
+    const groupedData = data.reduce((acc, item) => {
+        const key = item.category_name;
+
+
+        if (!acc[key]) {
+            acc[key] = [];
         }
-    });
 
 
-    console.log(arrs);
-    res.json(arrs);
+        acc[key].push(item);
+
+        return acc;
+    }, {});
+    res.json(groupedData)
     res.end();
 });
 
