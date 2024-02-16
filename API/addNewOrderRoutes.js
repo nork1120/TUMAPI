@@ -42,7 +42,8 @@ const TimeConversion = (date, addTime) => {
 // 新增訂單(需要同時新增好幾筆訂單在租借名單(borrow_order資料表)，接著對應使用者ID新增在租借品項(borrow_order_item資料表))
 router.post("/addNewOrder", async (req, res) => {
   // 新增訂單到租借名單(borrow_order資料表)
-  const { user_id, item_id, borrow_start, borrow_end, memo } = req.body;
+  const { user_id, item_id, borrow_start, borrow_end, memo, borrow_type } =
+    req.body;
   try {
     const status = 1;
     const warning = 0;
@@ -50,7 +51,7 @@ router.post("/addNewOrder", async (req, res) => {
     // 計算 borrow_deadline (借用起始期限)
     let borrow_deadline = TimeConversion(borrow_start, 1800000);
 
-    const queryOrder = `INSERT INTO borrow_order (user_id, borrow_start, borrow_end, borrow_deadline, status, warning, memo) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const queryOrder = `INSERT INTO borrow_order (user_id, borrow_start, borrow_end, borrow_deadline, status, warning, memo,borrow_type) VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
     const orderValues = [
       user_id,
       borrow_start,
@@ -59,12 +60,12 @@ router.post("/addNewOrder", async (req, res) => {
       status,
       warning,
       memo,
+      borrow_type,
     ];
 
     // 新增 borrow_order資料表 紀錄
     const [orderResult] = await sequelize.query(queryOrder, {
       replacements: orderValues,
-      type: sequelize.QueryTypes.INSERT,
     });
 
     const OrderId = orderResult; // 根據返回的結果獲取 orderId
@@ -88,7 +89,6 @@ router.post("/addNewOrder", async (req, res) => {
       // 插入 borrow_order_item資料表 紀錄
       await sequelize.query(queryItems, {
         replacements: ItemValues,
-        type: sequelize.QueryTypes.INSERT,
       });
     }
 
