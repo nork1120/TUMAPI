@@ -7,6 +7,7 @@ const sequelize = new Sequelize("tmu", "root", "nork1120", {
   host: "localhost",
   dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
 });
+
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
 
@@ -24,7 +25,7 @@ router.post("/register", async (req, res) => {
     // 驗證使用者註冊資料是否符合規範
     const { error } = registerValidation(req.body);
     if (error) {
-      return res.status(400).send(error.details[0].message);
+      return res.status(200).send(error.details[0].message);
     }
 
     // 將密碼加鹽
@@ -51,10 +52,18 @@ router.post("/register", async (req, res) => {
 
     return res.send({ message: "使用者註冊成功!" });
   } catch (e) {
-    return res
-      .status(500)
-      .send({ message: "註冊使用者失敗", error: e.toString() });
+    if (e.toString() == "SequelizeUniqueConstraintError: Validation error") {
+      return res
+        .status(500)
+        .send({ message: "帳號重複", error: e.toString() });
+    } else {
+      return res
+        .status(500)
+        .send({ message: "註冊使用者失敗", error: e.toString() });
+    }
+
   }
+
 });
 
 // 使用者登入
@@ -82,16 +91,15 @@ router.post("/login", async (req, res) => {
 
     if (!users || users.length === 0) {
       // 找不到使用者
-      return res.status(400).send("使用者帳號輸入錯誤，請重新輸入!");
+      return res.status(500).send("使用者帳號輸入錯誤，請重新輸入!");
     }
 
     let result = bcrypt.compare(password, users.password);
     // 確認密碼是否相同
     if (!result) {
       // 密碼錯誤
-      return res.status(400).send("輸入密碼錯誤，請重新輸入!");
+      return res.status(500).send("輸入密碼錯誤，請重新輸入!");
     }
-
     return res.send({ message: "登入成功!", UserData: users });
   } catch (e) {
     return res
