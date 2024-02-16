@@ -3,10 +3,15 @@ const router = express.Router();
 const registerValidation = require("../Validation").registerValidation;
 const loginValidation = require("../Validation").loginValidation;
 const { QueryTypes, Sequelize } = require("sequelize");
-const sequelize = new Sequelize("tmu", "root", "nork1120", {
-  host: "localhost",
-  dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
-});
+const sequelize = new Sequelize(
+  process.env.DATABASE_NAME,
+  process.env.DATABASE_USER,
+  process.env.DATABASE_PASSWORD,
+  {
+    host: "localhost",
+    dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+  }
+);
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
 
