@@ -1,24 +1,24 @@
 const express = require("express");
 const router = express.Router();
 const { QueryTypes, Sequelize } = require('sequelize');
-const sequelize = new Sequelize("tmu", "root", "nork1120", {
-    host: "localhost",
-    dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
-}
+// const sequelize = new Sequelize("tmu", "root", "nork1120", {
+//     host: "localhost",
+//     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+// }
+// );
+const sequelize = new Sequelize(
+    process.env.DATABASE_NAME,
+    process.env.DATABASE_USER,
+    process.env.DATABASE_PASSWORD,
+    {
+        host: "localhost",
+        dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    }
 );
 // api範例
 // id:"1"
 
-// const { QueryTypes, Sequelize } = require("sequelize");
-// const sequelize = new Sequelize(
-//   process.env.DATABASE_NAME,
-//   process.env.DATABASE_USER,
-//   process.env.DATABASE_PASSWORD,
-//   {
-//     host: "localhost",
-//     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
-//   }
-// );
+
 
 router.post("/ClassroomSearch", async (req, res) => {
     const queryItems = `SELECT DISTINCT

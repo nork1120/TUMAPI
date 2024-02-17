@@ -9,8 +9,9 @@ const registerValidation = (data) => {
     department_id: Joi.number().integer().required(),
     phone: Joi.string().required(),
     email: Joi.string().required(),
+    student_no: [Joi.string().optional(), Joi.allow(null)],
   });
-
+  
   return schema.validate(data);
 };
 

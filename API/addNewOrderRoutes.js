@@ -2,21 +2,33 @@ const express = require("express");
 const router = express.Router();
 const db = require("../models");
 const { QueryTypes, Sequelize } = require("sequelize");
+// const sequelize = new Sequelize("tmu", "root", "nork1120", {
+//   host: "localhost",
+//   dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+// });
 const sequelize = new Sequelize(
   process.env.DATABASE_NAME,
   process.env.DATABASE_USER,
   process.env.DATABASE_PASSWORD,
   {
-    host: "localhost",
-    dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+      host: "localhost",
+      dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
   }
 );
-
 router.use((req, res, next) => {
   console.log("正在經過新增訂單Middleware...");
   next();
 });
 
+// const sequelize = new Sequelize(
+//   process.env.DATABASE_NAME,
+//   process.env.DATABASE_USER,
+//   process.env.DATABASE_PASSWORD,
+//   {
+//     host: "localhost",
+//     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+//   }
+// );
 // 處利時間加數(加分鐘) 第一個參數: 需要改變的日期時間,第二個參數: 需要加上的時間(毫秒)
 const TimeConversion = (date, addTime) => {
   date = new Date(date); // 將字串轉換為時間物件
@@ -42,8 +54,7 @@ const TimeConversion = (date, addTime) => {
 // 新增訂單(需要同時新增好幾筆訂單在租借名單(borrow_order資料表)，接著對應使用者ID新增在租借品項(borrow_order_item資料表))
 router.post("/addNewOrder", async (req, res) => {
   // 新增訂單到租借名單(borrow_order資料表)
-  const { user_id, item_id, borrow_start, borrow_end, memo, borrow_type } =
-    req.body;
+  const { user_id, item_id, borrow_start, borrow_end, memo, borrow_type } = req.body;
   try {
     const status = 1;
     const warning = 0;
@@ -60,7 +71,7 @@ router.post("/addNewOrder", async (req, res) => {
       status,
       warning,
       memo,
-      borrow_type,
+      borrow_type
     ];
 
     // 新增 borrow_order資料表 紀錄
