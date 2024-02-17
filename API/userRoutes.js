@@ -148,7 +148,7 @@ router.post("/login", async (req, res) => {
     // const CheckTokenData = [
     //   uuid
     // ]
-    regular.CheckToken(uuid).then(e => {
+    regular.CheckToken(uuid).then(async e => {
       console.log(e, "ssssssssssssss");
     }).catch(err => {
       console.log(err);
