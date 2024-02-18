@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { QueryTypes, Sequelize } = require('sequelize');
+const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
 var moment = require("moment");
 
@@ -24,8 +24,6 @@ const sequelize = new Sequelize(
 // api範例
 // id:"1"
 
-
-
 router.post("/ClassroomSearch", async (req, res) => {
     const { token } = req.body;
 
@@ -46,13 +44,11 @@ router.post("/ClassroomSearch", async (req, res) => {
         WHERE
             \`user\`.id = ?
         ORDER BY
-            catagory.id;`
-                const profileValues = [
-                    e
-                ];
+            catagory.id;`;
+                const profileValues = [e];
                 const findResult = await sequelize.query(queryItems, {
                     replacements: profileValues,
-                })
+                });
                 res.json(findResult[0]);
                 res.end();
             } else {
@@ -63,10 +59,6 @@ router.post("/ClassroomSearch", async (req, res) => {
             console.log(err);
             return;
         });
-
-
-
-
 });
 
 // 查看該使用者全部有哪些(教室or器材)借用單

@@ -139,7 +139,7 @@ router.post("/login", async (req, res) => {
       vaild_until,
       ban_until,
       deleted_at,
-      student_no
+      student_no,
     } = users;
     let dataD = moment();
     console.log(dataD < vaild_until, dataD, vaild_until);
@@ -177,6 +177,70 @@ router.post("/login", async (req, res) => {
     return res
       .status(500)
       .send({ message: "使用者登入失敗", error: e.toString() });
+  }
+});
+
+// 更改使用者資料
+router.post("/edit-user", async (req, res) => {
+  // 抓到使用者傳送過來的id 和其他資料
+  const { user_id, real_name, department_id, phone, email } = req.body;
+
+  console.log(user_id, real_name, phone, email);
+  // 如果輸入值為空字串
+  if (!real_name) {
+    return res.status(500).send("真實姓名是必填欄位!");
+  }
+  if (!phone) {
+    return res.status(500).send("電話號碼是必填欄位!");
+  }
+  if (!email) {
+    return res.status(500).send("信箱是必填欄位!");
+  }
+
+  try {
+    const updateQuery = `
+      UPDATE user
+      SET real_name = ?, department_id = ?, phone = ?, email = ?
+      WHERE id = ?;
+    `;
+
+    // 更新用戶資料
+    await sequelize.query(updateQuery, {
+      replacements: [real_name, department_id, phone, email, user_id],
+      type: QueryTypes.UPDATE,
+    });
+
+    return res.send("更改使用者資料成功!");
+  } catch (e) {
+    console.log(e);
+    return res.status(500).send("更改使用者資料失敗!");
+  }
+});
+
+// 查找個別使用者資訊
+router.post("/find-user", async (req, res) => {
+  const { user_id } = req.body;
+  try {
+    const query = `
+      SELECT real_name,department_id,role_id,phone,email
+      FROM user
+      WHERE id=?;
+    `;
+
+    // 查詢該id的用戶資訊
+    let findUser = await sequelize.query(query, {
+      replacements: [user_id],
+      type: QueryTypes.SELECT,
+    });
+
+    if (!findUser || findUser.length == 0) {
+      return res.status(500).send("找不到該使用者，請重新搜尋。");
+    }
+
+    return res.send({ message: "找到的使用者資料:", data: findUser });
+  } catch (e) {
+    console.log(e);
+    return res.status(500).send("搜尋使用者失敗。");
   }
 });
 
