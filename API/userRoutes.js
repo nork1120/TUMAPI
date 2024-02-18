@@ -217,4 +217,31 @@ router.post("/edit-user", async (req, res) => {
   }
 });
 
+// 查找個別使用者資訊
+router.post("/find-user", async (req, res) => {
+  const { user_id } = req.body;
+  try {
+    const query = `
+      SELECT real_name,department_id,role_id,phone,email
+      FROM user
+      WHERE id=?;
+    `;
+
+    // 查詢該id的用戶資訊
+    let findUser = await sequelize.query(query, {
+      replacements: [user_id],
+      type: QueryTypes.SELECT,
+    });
+
+    if (!findUser || findUser.length == 0) {
+      return res.status(500).send("找不到該使用者，請重新搜尋。");
+    }
+
+    return res.send({ message: "找到的使用者資料:", data: findUser });
+  } catch (e) {
+    console.log(e);
+    return res.status(500).send("搜尋使用者失敗。");
+  }
+});
+
 module.exports = router;
