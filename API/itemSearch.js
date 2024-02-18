@@ -20,40 +20,39 @@ const sequelize = new Sequelize(
 
 // "SELECT items.id, items.`name`,items.model,items.img_path,items.note,`catagory`.`category_name` FROM \`\`user\`\` JOIN role_permission_relation AS relation  ON `relation`.`role_id` = `\`\`user\`\``.`role_id` JOIN items  ON `items`.`borrow_permission_id` = `relation`.`permission_id` JOIN items_category AS catagory  ON `catagory`.`id` = `items`.`category_id` AND `catagory`.`vaild` = 1 AND `catagory`.`class` = 0 WHERE `\`\`user\`\``.`id` = " + req.body.id + ";"
 router.post("/ItemSearch", async (req, res) => {
-  //   const CheckTokenSQL = `SELECT get_user_id_by_token(?);`;
-  //   const CheckTokenDATA = ["774b813e-a81d-4451-87c7-b4ce8eb1d565"];
-  //   const CheckToken = await sequelize.query(CheckTokenSQL, {
-  //     replacements: CheckTokenDATA,
-  //   });
+  const { token } = req.body;
   regular
-    .CheckToken("9af7b363-95ed-40f5-baa9-a49b44ce8133")
+    .CheckToken(token)
     .then(async (e) => {
-      console.log(e);
+      if (e != 0) {
+        const queryItems = `SELECT DISTINCT
+        catagory.id,
+        catagory.category_name
+    FROM
+        \`user\`
+        JOIN role_permission_relation AS relation ON relation.role_id = \`user\`.role_id
+        JOIN items ON items.borrow_permission_id = relation.permission_id
+        JOIN items_category AS catagory ON catagory.id = items.category_id
+        AND catagory.vaild = 1
+        AND catagory.class = 0
+    WHERE
+        \`user\`.id = ?
+    ORDER BY
+        catagory.id;`;
+        const profileValues = [e];
+        const findResult = await sequelize.query(queryItems, {
+          replacements: profileValues,
+        });
+        res.json(findResult[0]);
+        res.end();
+      } else {
+        return res.send({ message: "token失效" });
+      }
     })
     .catch((err) => {
       console.log(err);
       return;
     });
-  const queryItems = `SELECT DISTINCT
-    catagory.id,
-    catagory.category_name
-FROM
-    \`user\`
-    JOIN role_permission_relation AS relation ON relation.role_id = \`user\`.role_id
-    JOIN items ON items.borrow_permission_id = relation.permission_id
-    JOIN items_category AS catagory ON catagory.id = items.category_id
-    AND catagory.vaild = 1
-    AND catagory.class = 0
-WHERE
-    \`user\`.id = ?
-ORDER BY
-    catagory.id;`;
-  const profileValues = [req.body.id];
-  const findResult = await sequelize.query(queryItems, {
-    replacements: profileValues,
-  });
-  res.json(findResult[0]);
-  res.end();
 });
 
 module.exports = router;

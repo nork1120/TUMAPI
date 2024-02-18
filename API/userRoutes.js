@@ -28,10 +28,10 @@ const { date } = require("joi");
 const saltRounds = 12;
 
 // Middleware
-// router.use((req, res, next) => {
-//   console.log("正在經過一個使用者Middleware...");
-//   next();
-// });
+router.use((req, res, next) => {
+  console.log("正在經過一個使用者Middleware...");
+  next();
+});
 
 // 註冊(新增)使用者
 router.post("/register", async (req, res) => {
@@ -139,6 +139,7 @@ router.post("/login", async (req, res) => {
       vaild_until,
       ban_until,
       deleted_at,
+      student_no
     } = users;
     let dataD = moment();
     console.log(dataD < vaild_until, dataD, vaild_until);
@@ -168,8 +169,7 @@ router.post("/login", async (req, res) => {
         real_name,
         department_id,
         role_id,
-        phone,
-        email,
+        student_no,
         token: uuid,
       },
     });
