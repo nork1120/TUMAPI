@@ -16,6 +16,7 @@ const regular = {
             replacements: CheckTokenDATA,
         });
         return CheckToken[0][0][`get_user_id_by_token('${token}')`];
+
         // return "0";
 
         // const CheckTokenSQL = `UPDATE personal_access_tokens

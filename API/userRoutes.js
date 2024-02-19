@@ -219,7 +219,7 @@ router.post("/edit-user", async (req, res) => {
 
 // 查找個別使用者資訊
 router.post("/find-user", async (req, res) => {
-  const { user_id } = req.body;
+  const { token } = req.body;
   try {
     const query = `
       SELECT real_name,department_id,role_id,phone,email
