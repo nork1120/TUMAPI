@@ -241,7 +241,7 @@ router.post("/find-user", async (req, res) => {
         });
 
         if (!findUser || findUser.length == 0) {
-          return res.status(500).send("找不到該使用者，請重新搜尋。");
+          return res.status(500).send({ message: "找不到該使用者，請重新搜尋。" });
         }
 
         return res.send({ message: "找到的使用者資料:", data: findUser });
