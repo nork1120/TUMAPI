@@ -2,12 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
-const { google } = require("googleapis");
-const key = require("../my-project-19357-1686887162807-b9f7da50916b.json");
 
-const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, [
-  "https://www.googleapis.com/auth/calendar",
-]);
 
 const sequelize = new Sequelize(
   process.env.DATABASE_NAME,
@@ -22,35 +17,7 @@ const sequelize = new Sequelize(
 // id:"1"
 router.post("/ItemSearch", async (req, res) => {
   const { token } = req.body;
-  jwtClient.authorize((err, tokens) => {
-    if (err) {
-      console.error("授权失败:", err);
-      return;
-    }
-    let inseData = {
-      summary: "API 測試",
-      start: {
-        dateTime: "2024-03-02T09:00:00",
-        timeZone: "Asia/Taipei",
-      },
-      end: {
-        dateTime: "2024-03-02T12:00:00",
-        timeZone: "Asia/Taipei",
-      },
-    };
-    const calendar = google.calendar({ version: "v3", auth: jwtClient });
-    calendar.events.insert(
-      {
-        calendarId: "32ef4d4f32507193e6d65baa40ad01a7c4326218511febc40a30b2d95e918974@group.calendar.google.com",
-        resource: inseData,
-      },
-      (err, res) => {
-        if (err) return console.log("API 返回错误: " + err);
-        console.log(res);
-      }
-    );
-  });
-
+  
   regular
     .CheckToken(token)
     .then(async (e) => {

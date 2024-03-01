@@ -101,48 +101,6 @@ router.post("/ClassroomsOrItems", async (req, res) => {
         })
 
 });
-
-// // 查看個別教室借用单詳情
-// router.post("/class-borrow-details", async (req, res) => {
-//     const { borrow_order_id, user_id } = req.body;
-
-//     // 確保提供了所有必要的參數
-//     if (!borrow_order_id || !user_id) {
-//         return res.status(200).send("借用單編號和用戶ID是必須的。");
-//     }
-
-//     try {
-//         const query = `
-//       SELECT *
-//       FROM borrow_order_item
-//       JOIN borrow_order
-//           ON borrow_order.id = borrow_order_item.borrow_order_id
-//               AND borrow_order.borrow_type = 1  
-//       WHERE borrow_order_item.borrow_order_id = ?
-//           AND borrow_order.user_id = ?;
-//     `;
-
-//         const findResults = await sequelize.query(query, {
-//             replacements: [borrow_order_id, user_id],
-//             type: sequelize.QueryTypes.SELECT,
-//         });
-
-//         // 检查结果是否为空
-//         if (findResults.length === 0) {
-//             return res.status(404).send("未找到教室借用单詳情。");
-//         }
-
-//         // 返回查询到的结果
-//         res.send({
-//             message: "查询到的教室借用单詳情:",
-//             data: findResults,
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).send("查詢教室借用单詳情時發生錯誤。");
-//     }
-// });
-
 // 查看個別(教室or器材)借用單詳情
 router.post("/borrow-details", async (req, res) => {
     const { borrow_order_id, token, borrow_type } = req.body;
