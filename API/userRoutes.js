@@ -36,7 +36,7 @@ router.use((req, res, next) => {
 
 // 註冊(新增)使用者
 router.post("/register", async (req, res) => {
-  const {
+  let {
     username,
     password,
     real_name,
@@ -45,9 +45,24 @@ router.post("/register", async (req, res) => {
     email,
     student_no,
   } = req.body;
+
   try {
+    // 查詢 department_id 對應的 category
+    const departmentQuery = `SELECT category FROM department WHERE id = ?`;
+
+    // 查詢 department_id輸入值 所對應到的 department資料表的 category欄位值
+    const department = await sequelize.query(departmentQuery, {
+      replacements: [department_id],
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // 如果 department_id 對應的 category 為 1，則將 student_no 設為 null
+    if (department[0].category == 1) {
+      student_no = null;
+    }
+
     // 驗證使用者註冊資料是否符合規範
-    const { error } = registerValidation(req.body);
+    const { error } = registerValidation(req.body, department[0].category);
     if (error) {
       return res.status(200).send(error.details[0].message);
     }
