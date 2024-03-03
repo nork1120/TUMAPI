@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const registerValidation = require("../Validation").registerValidation;
 const loginValidation = require("../Validation").loginValidation;
+const editUserValidation = require("../Validation").editUserValidation;
 const { regular } = require("../sharedMethod/sharedMethod");
 var moment = require("moment");
 const { v4: uuidv4 } = require("uuid");
@@ -35,7 +36,7 @@ router.use((req, res, next) => {
 
 // 註冊(新增)使用者
 router.post("/register", async (req, res) => {
-  const {
+  let {
     username,
     password,
     real_name,
@@ -44,9 +45,24 @@ router.post("/register", async (req, res) => {
     email,
     student_no,
   } = req.body;
+
   try {
+    // 查詢 department_id 對應的 category
+    const departmentQuery = `SELECT category FROM department WHERE id = ?`;
+
+    // 查詢 department_id輸入值 所對應到的 department資料表的 category欄位值
+    const department = await sequelize.query(departmentQuery, {
+      replacements: [department_id],
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // 如果 department_id 對應的 category 為 1，則將 student_no 設為 null
+    if (department[0].category == 1) {
+      student_no = null;
+    }
+
     // 驗證使用者註冊資料是否符合規範
-    const { error } = registerValidation(req.body);
+    const { error } = registerValidation(req.body, department[0].category);
     if (error) {
       return res.status(200).send(error.details[0].message);
     }
@@ -185,16 +201,14 @@ router.post("/edit-user", async (req, res) => {
   // 抓到使用者傳送過來的id 和其他資料
   const { token, real_name, department_id, phone, email } = req.body;
 
-  // 如果輸入值為空字串
-  if (!real_name) {
-    return res.status(500).send("真實姓名是必填欄位!");
+  // 驗證資料是否符合規範 (real_name、phone、email 這三個欄位)
+  const { error } = editUserValidation(req.body);
+
+  if (error) {
+    // 驗證失敗
+    return res.status(500).send(error.details[0].message);
   }
-  if (!phone) {
-    return res.status(500).send("電話號碼是必填欄位!");
-  }
-  if (!email) {
-    return res.status(500).send("信箱是必填欄位!");
-  }
+
   regular
     .CheckToken(token)
     .then(async (e) => {
@@ -241,7 +255,9 @@ router.post("/find-user", async (req, res) => {
         });
 
         if (!findUser || findUser.length == 0) {
-          return res.status(500).send({ message: "找不到該使用者，請重新搜尋。" });
+          return res
+            .status(500)
+            .send({ message: "找不到該使用者，請重新搜尋。" });
         }
 
         return res.send({ message: "找到的使用者資料:", data: findUser });
