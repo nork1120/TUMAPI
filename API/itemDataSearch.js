@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+var moment = require("moment");
+require("moment/locale/zh-tw");
+moment.locale("zh-tw");
 const { QueryTypes, Sequelize } = require("sequelize");
 // const sequelize = new Sequelize("tmu", "root", "nork1120", {
 //   host: "localhost",
@@ -103,6 +106,90 @@ router.post("/itemDataSearch", async (req, res) => {
 
 });
 
+router.post("/itemCycleDataSearch", async (req, res) => {
+    const { borrow_start, borrow_end, id, role_id, start_time_Hourd, start_time_Minute, end_time_Hourd, end_time_Minute, which_day } = req.body;
+    console.log(borrow_start.toISOString().slice(0,));
+    let startDate = new Date('2024-03-01');
+    let endDate = new Date('2024-03-29');
+    let datelest = [];
+    let storage;
+    let endstorage;
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (d.getDay() === which_day) {
+            storage = new Date(d);
+            endstorage = new Date(d);
+            storage.setHours(start_time_Hourd + 8, start_time_Minute)
+            endstorage.setHours(end_time_Hourd + 8, end_time_Minute)
+            datelest.push({
+                start_date: storage.toISOString().replace("T", " ").slice(0, -5),
+                end_date: endstorage.toISOString().replace("T", " ").slice(0, -5)
+            })
+        }
+    }
+    console.log(datelest);
+    await sequelize.query(`
+    CREATE TEMPORARY TABLE temp_borrow_time(
+        borrow_time_start DATETIME NOT NULL,
+        borrow_time_end DATETIME NOT NULL,
+        off_hour_check_start1 DATETIME,
+        off_hour_check_end1 DATETIME,
+        off_hour_check_start2 DATETIME,
+        off_hour_check_end2 DATETIME
+    );
+`);
+    let profileValues = "";
+    for (let index = 0; index < datelest.length; index++) {
+        console.log(datelest.length, index);
+        profileValues += AddStrings(datelest[index].start_date, datelest[index].end_date, null, null, null, null, datelest.length - 1 == index ? ";" : ",")
+    }
+    console.log(profileValues);
+
+
+    await sequelize.query(`
+    INSERT INTO temp_borrow_time
+    (borrow_time_start, borrow_time_end, off_hour_check_start1, off_hour_check_end1, off_hour_check_start2, off_hour_check_end2)
+    VALUES
+       ${profileValues}
+`);
+    const query = `
+        SELECT temp_borrow_time.*, FORMAT((
+             SELECT COUNT(*)
+              FROM borrow_order_item
+                    WHERE borrow_order_item.borrow_end > temp_borrow_time.borrow_time_start
+                        AND borrow_order_item.borrow_start < temp_borrow_time.borrow_time_end
+                        AND borrow_order_item.item_id = items.id
+                        AND borrow_order_item.status > 0
+            ), 0) AS duplicated, FORMAT((
+             SELECT COUNT(*)
+              FROM borrow_order_item
+                    WHERE borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start1
+                        AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end1
+                        AND borrow_order_item.item_id = items.id
+                        AND borrow_order_item.status > 0
+            ), 0) AS off_hour_times1, FORMAT((
+             SELECT COUNT(*)
+              FROM borrow_order_item
+                    WHERE borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start2
+                        AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end2
+                        AND borrow_order_item.item_id = items.id
+                        AND borrow_order_item.status > 0
+            ), 0) AS off_hour_times2, items.borrow_times_off_hour
+         FROM temp_borrow_time
+            JOIN items
+                ON items.id = 13
+                    AND items.available = 1;
+    `;
+
+    const findResult = await sequelize.query(query);
+    let data = findResult[0];
+    res.send({
+        message: "週期性",
+        data: data
+    })
+})
+
+
+
 // 查看個別物品借用單詳情
 router.post("/item-borrow-details", async (req, res) => {
     const { borrow_order_id, user_id } = req.body;
@@ -143,5 +230,11 @@ router.post("/item-borrow-details", async (req, res) => {
         res.status(200).send("查詢物品借用單詳情時發生錯誤。");
     }
 });
+
+
+
+function AddStrings(a, b, c, d, e, f, end) {
+    return `("${a}", "${b}", ${c == null ? null : "\"" + c + "\""}, ${d == null ? null : "\"" + d + "\""}, ${e == null ? null : "\"" + e + "\""}, ${f == null ? null : "\"" + f + "\""})${end}`
+}
 
 module.exports = router;

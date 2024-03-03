@@ -30,7 +30,6 @@ app.use("/API/search", itemDataSearch);
 app.use("/API/search", ClassroomSearch);
 app.use("/API/addOrder", addNewOrderRoutes);
 app.use("/API/users", userRoutes);
-// app.use("/API/search", itemDataSearch);
 // 在开始服务器前同步所有模型(Model)
 sequelize.sync().then(() => {
   app.listen(8000, () => {
