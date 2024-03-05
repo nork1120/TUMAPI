@@ -1,117 +1,33 @@
-CREATE TEMPORARY TABLE temp_borrow_time (
-    borrow_time_start DATETIME NOT NULL,
-    borrow_time_end DATETIME NOT NULL,
-    off_hour_check_start1 DATETIME,
-    off_hour_check_end1 DATETIME,
-    off_hour_check_start2 DATETIME,
-    off_hour_check_end2 DATETIME
-);
-
-INSERT INTO
-    temp_borrow_time (
-        borrow_time_start,
-        borrow_time_end,
-        off_hour_check_start1,
-        off_hour_check_end1,
-        off_hour_check_start2,
-        off_hour_check_end2
-    )
-VALUES
-    (
-        "2024-01-21 19:00:00",
-        "2024-01-21 21:00:00",
-        "2024-01-19 18:00:00",
-        "2024-01-22 09:00:00",
-        "2024-01-19 18:00:00",
-        "2024-01-22 09:00:00"
-    ),
-    (
-        "2024-01-28 19:00:00",
-        "2024-01-28 21:00:00",
-        "2024-01-26 18:00:00",
-        "2024-01-29 09:00:00",
-        null,
-        null
-    ),
-    (
-        "2024-02-04 19:00:00",
-        "2024-02-04 21:00:00",
-        null,
-        null,
-        null,
-        null
-    ),
-    (
-        "2024-02-11 19:00:00",
-        "2024-02-11 21:00:00",
-        null,
-        null,
-        null,
-        null
-    ),
-    (
-        "2024-02-18 19:00:00",
-        "2024-02-18 21:00:00",
-        null,
-        null,
-        null,
-        null
-    ),
-    (
-        "2024-02-25 19:00:00",
-        "2024-02-25 21:00:00",
-        null,
-        null,
-        null,
-        null
-    );
-
-SELECT
-    temp_borrow_time.*,
-    FORMAT (
-        (
-            SELECT
-                COUNT(*)
-            FROM
-                borrow_order_item
-            WHERE
-                borrow_order_item.borrow_end > temp_borrow_time.borrow_time_start
-                AND borrow_order_item.borrow_start < temp_borrow_time.borrow_time_end
-                AND borrow_order_item.item_id = items.id
-                AND borrow_order_item.status > 0
-        ),
-        0
-    ) AS duplicated,
-    FORMAT (
-        (
-            SELECT
-                COUNT(*)
-            FROM
-                borrow_order_item
-            WHERE
-                borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start1
-                AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end1
-                AND borrow_order_item.item_id = items.id
-                AND borrow_order_item.status > 0
-        ),
-        0
-    ) AS off_hour_times1,
-    FORMAT (
-        (
-            SELECT
-                COUNT(*)
-            FROM
-                borrow_order_item
-            WHERE
-                borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start2
-                AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end2
-                AND borrow_order_item.item_id = items.id
-                AND borrow_order_item.status > 0
-        ),
-        0
-    ) AS off_hour_times2,
-    items.borrow_times_off_hour
-FROM
-    temp_borrow_time
-    JOIN items ON items.id = 13
-    AND items.available = 1;
+SELECT items.id, items.name, items.model, items.img_path, items.note, items.category_id, items_category.category_name, SUM((
+        SELECT COUNT(*)
+        FROM borrow_order_item
+        WHERE borrow_order_item.borrow_end > temp_borrow_time.borrow_time_start
+            AND borrow_order_item.borrow_start < temp_borrow_time.borrow_time_end
+            AND borrow_order_item.item_id = items.id
+            AND borrow_order_item.status > 0
+    )) AS duplicated, SUM(IF((
+        SELECT COUNT(*)
+        FROM borrow_order_item
+        WHERE borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start1
+            AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end1
+            AND borrow_order_item.item_id = items.id
+            AND borrow_order_item.status > 0
+    ) >= items.borrow_times_off_hour OR (
+        SELECT COUNT(*)
+        FROM borrow_order_item
+        WHERE borrow_order_item.borrow_end > temp_borrow_time.off_hour_check_start2
+            AND borrow_order_item.borrow_start < temp_borrow_time.off_hour_check_end2
+            AND borrow_order_item.item_id = items.id
+            AND borrow_order_item.status > 0
+    ) >= items.borrow_times_off_hour, 1, 0)) AS off_hour_times_over
+FROM items
+JOIN items_category
+    ON items.category_id = items_category.id
+JOIN role_permission_relation
+    ON role_permission_relation.role_id = ?
+        AND role_permission_relation.permission_id = items.borrow_permission_id
+CROSS JOIN temp_borrow_time
+WHERE items.category_id = ?
+    AND items.available = 1
+    AND items.deleted_at IS NULL;
+GROUP BY items.id;
