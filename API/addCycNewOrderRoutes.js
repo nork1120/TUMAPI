@@ -89,6 +89,7 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
           if (e != 0) {
             // 計算 borrow_deadline (借用起始期限)
             for (const datest of datelest) {
+                
               let borrow_deadline = TimeConversion(datest.start_date, 1800000);
               const queryOrder = `INSERT INTO borrow_order (user_id, borrow_start, borrow_end, borrow_deadline, status, warning, memo,borrow_type) VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
               const orderValues = [
