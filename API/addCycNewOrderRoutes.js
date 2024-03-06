@@ -164,7 +164,7 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
                 });
               }
             }
-            return res.send({ message: "新增訂單成功", OrderId: orderResult });
+            return res.send({ message: "新增訂單成功"});
           } else {
             return res.send({ message: "token失效" });
           }

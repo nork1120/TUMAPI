@@ -31,6 +31,7 @@ router.post("/ClassroomSearch", async (req, res) => {
     .CheckToken(token)
     .then(async (e) => {
       if (e != 0) {
+        
         const queryItems = `SELECT DISTINCT
             catagory.id,
             catagory.category_name
@@ -150,8 +151,8 @@ router.post("/borrow-details", async (req, res) => {
           data: {
             list: findResults,
             share: {
-              borrow_start: moment(borrow_start).format("LLL"),
-              borrow_end: moment(borrow_end).format("LLL"),
+              borrow_start: moment.utc(borrow_start).format("LLL"),
+              borrow_end: moment.utc(borrow_end).format("LLL"),
               memo,
             },
           },

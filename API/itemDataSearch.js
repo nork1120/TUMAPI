@@ -1,13 +1,7 @@
 const express = require("express");
 const router = express.Router();
-// var moment = require("moment");
-// require("moment/locale/zh-tw");
-// moment.locale("zh-tw");
 const { QueryTypes, Sequelize } = require("sequelize");
-// const sequelize = new Sequelize("tmu", "root", "nork1120", {
-//   host: "localhost",
-//   dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
-// });
+
 const sequelize = new Sequelize(
   process.env.DATABASE_NAME,
   process.env.DATABASE_USER,
@@ -20,15 +14,7 @@ const sequelize = new Sequelize(
     },
   }
 );
-// api範例
-// "id": [
-//     1
-// ],
-// "borrow_start": "2024-01-26 08:00:00",
-// "borrow_end": "2024-01-26 17:00:00"
-
 router.post("/itemDataSearch", async (req, res) => {
-  // const findResult = await sequelize.query("SELECT items.id,items.`name`,items.model,items.img_path,items.note ,items_category.category_name,items.category_id FROM items JOIN items_category ON items.category_id = items_category.id  WHERE  `items`.`available` = 1   AND items.id IN ( " + req.body.id.join(",") + ")   AND NOT EXISTS (  SELECT  	*   FROM  	borrow_order_item   WHERE  	`borrow_order_item`.`borrow_end` > " + "\"" + req.body.borrow_start + "\"" + "   AND `borrow_order_item`.`borrow_start` < " + "\"" + req.body.borrow_end + "\"" + " AND `borrow_order_item`.`item_id` = `items`.`id` AND `borrow_order_item`.`status` > 0   )ORDER BY items.category_id DESC;")
   try {
     const queryItems = `SELECT
         items.id,

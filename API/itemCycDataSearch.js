@@ -46,6 +46,7 @@ router.post("/classroomCycleDataSearch", async (req, res) => {
       message: `你所選的時間段裡沒有周${which_day}`,
     });
   }
+
   await sequelizess.query(`
           CREATE TEMPORARY TABLE temp_borrow_time(
               borrow_time_start DATETIME NOT NULL,
@@ -75,9 +76,7 @@ router.post("/classroomCycleDataSearch", async (req, res) => {
           VALUES
              ${profileValues}
       `);
-  // await sequelize.query(`
-  // SET session sql_mode="";
-  // `);
+
   const query = `
         SELECT items.id, items.name, items.model, items.img_path, items.note, items.category_id, items_category.category_name, SUM((
           SELECT COUNT(*)
@@ -113,6 +112,7 @@ router.post("/classroomCycleDataSearch", async (req, res) => {
       AND items.deleted_at IS NULL
       GROUP BY items.id;
           `;
+          
   const lestId = [role_id, id];
   const findResult = await sequelizess.query(query, {
     replacements: lestId,
@@ -151,7 +151,6 @@ router.post("/classroomCycleDataSearch", async (req, res) => {
   });
 });
 router.post("/classroomDataSearch", async (req, res) => {
-  // const findResult = await sequelize.query("SELECT items.id,items.`name`,items.model,items.img_path,items.note ,items_category.category_name,items.category_id FROM items JOIN items_category ON items.category_id = items_category.id  WHERE  `items`.`available` = 1   AND items.id IN ( " + req.body.id.join(",") + ")   AND NOT EXISTS (  SELECT  	*   FROM  	borrow_order_item   WHERE  	`borrow_order_item`.`borrow_end` > " + "\"" + req.body.borrow_start + "\"" + "   AND `borrow_order_item`.`borrow_start` < " + "\"" + req.body.borrow_end + "\"" + " AND `borrow_order_item`.`item_id` = `items`.`id` AND `borrow_order_item`.`status` > 0   )ORDER BY items.category_id DESC;")
   const sequelizess = new Sequelize(
     process.env.DATABASE_NAME,
     process.env.DATABASE_USER,

@@ -76,7 +76,6 @@ router.post("/addNewOrder", async (req, res) => {
           const [orderResult] = await sequelize.query(queryOrder, {
             replacements: orderValues,
           });
-          console.log(orderResult,"SSSSSSSSSSSSSSSSSSSSsss");
           const OrderId = orderResult; // 根據返回的結果獲取 orderId
 
           // 計算 return_deadline (歸還期限)
