@@ -72,7 +72,10 @@ router.post("/itemDataSearch", async (req, res) => {
       if (!acc[key]) {
         acc[key] = [];
       }
-      if (item.duplicated < item.borrow_times_off_hour) {
+      if (
+        item.off_hour_times < item.borrow_times_off_hour &&
+        item.duplicated == 0
+      ) {
         acc[key].push(item);
       }
       // acc[key].push(item);
@@ -81,6 +84,7 @@ router.post("/itemDataSearch", async (req, res) => {
     res.json(groupedData);
     res.end();
   } catch (e) {
+    console.log(e);
     return res
       .status(500)
       .send({ message: "使用者登入失敗", error: e.toString() });

@@ -40,7 +40,6 @@ router.post("/classroomCycleDataSearch", async (req, res) => {
       });
     }
   }
-  console.log(datelest);
   if (datelest.length == 0) {
     return res.status(500).send({
       message: `你所選的時間段裡沒有周${which_day}`,

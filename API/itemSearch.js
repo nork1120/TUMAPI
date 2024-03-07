@@ -24,7 +24,8 @@ router.post("/ItemSearch", async (req, res) => {
       if (e != 0) {
         const queryItems = `SELECT DISTINCT
         catagory.id,
-        catagory.category_name
+        catagory.category_name,
+        catagory.icon
     FROM
         \`user\`
         JOIN role_permission_relation AS relation ON relation.role_id = \`user\`.role_id
