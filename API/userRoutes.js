@@ -6,6 +6,9 @@ const editUserValidation = require("../Validation").editUserValidation;
 const { regular } = require("../sharedMethod/sharedMethod");
 var moment = require("moment");
 const { v4: uuidv4 } = require("uuid");
+const winston = require("winston");
+const expressWinston = require("express-winston");
+const logger = require("../logger"); // 引入logger配置文件內容
 
 require("moment/locale/zh-tw");
 moment.locale("zh-tw");
@@ -33,6 +36,15 @@ router.use((req, res, next) => {
   console.log("正在經過一個使用者Middleware...");
   next();
 });
+
+// 日誌 Middleware
+router.use(
+  expressWinston.logger({
+    winstonInstance: logger,
+    expressFormat: true, // 使用 Express 的日誌格式
+    statusLevels: true,
+  })
+);
 
 // 註冊(新增)使用者
 router.post("/register", async (req, res) => {
@@ -94,6 +106,7 @@ router.post("/register", async (req, res) => {
     if (e.toString() == "SequelizeUniqueConstraintError: Validation error") {
       return res.status(500).send({ message: "帳號重複", error: e.toString() });
     } else {
+      console.log(e);
       return res
         .status(500)
         .send({ message: "註冊使用者失敗", error: e.toString() });
@@ -111,6 +124,7 @@ router.post("/login", async (req, res) => {
 
     if (error) {
       // 驗證失敗
+      logger.warn("驗證失敗!使用者的資料不符合規範。");
       return res.status(400).send(error.details[0].message);
     }
 
@@ -126,6 +140,7 @@ router.post("/login", async (req, res) => {
 
     if (!users || users.length === 0) {
       // 找不到使用者
+      logger.warn("登入失敗! 找不到使用者帳號。");
       return res
         .status(500)
         .send({ message: "使用者帳號密碼輸入錯誤，請重新輸入!" });
@@ -140,6 +155,7 @@ router.post("/login", async (req, res) => {
     // 確認密碼是否相同
     if (!passs) {
       // 密碼錯誤
+      logger.warn("登入失敗! 使用者的密碼輸入錯誤。");
       return res
         .status(500)
         .send({ message: "使用者帳號密碼輸入錯誤，請重新輸入!" });
@@ -160,8 +176,10 @@ router.post("/login", async (req, res) => {
     let dataD = moment();
     console.log(dataD < vaild_until, dataD, vaild_until);
     if (dataD > vaild_until || null) {
+      logger.warn("帳號需要開通，請找行政人員!");
       return res.status(500).send({ message: "帳號需要開通，請找行政人員!" });
     } else if (dataD < ban_until) {
+      logger.warn("帳號已被刪除!");
       return res
         .status(500)
         .send({ message: `你已被停用至${moment(ban_until).calendar()}` });
@@ -190,6 +208,7 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (e) {
+    logger.error("使用者登入失敗!伺服器錯誤:" + e);
     return res
       .status(500)
       .send({ message: "使用者登入失敗", error: e.toString() });

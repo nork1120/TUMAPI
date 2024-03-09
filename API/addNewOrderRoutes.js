@@ -4,7 +4,7 @@ const db = require("../models");
 const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
 const { google } = require("googleapis");
-const key = require("../my-project-19357-1686887162807-b9f7da50916b.json");
+const key = require("../ardent-stacker-403709-2229d94760d5.json");
 
 const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, [
   "https://www.googleapis.com/auth/calendar",
@@ -199,8 +199,7 @@ router.post("/addNewOrder", async (req, res) => {
                 });
                 calendar.events.insert(
                   {
-                    calendarId:
-                      "32ef4d4f32507193e6d65baa40ad01a7c4326218511febc40a30b2d95e918974@group.calendar.google.com",
+                    calendarId: "samuel00410@gmail.com",
                     resource: inseData,
                   },
                   (err, res) => {
