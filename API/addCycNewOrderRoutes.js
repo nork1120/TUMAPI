@@ -63,6 +63,10 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
     name,
     role_id,
   } = req.body;
+
+  let a = [1, 2, 3]
+  let b = a;
+  b[0] = b[0] + 1
   let startDate = new Date(borrow_start);
   let endDate = new Date(borrow_end);
   let datelest = [];
@@ -74,6 +78,7 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
       endstorage = new Date(d);
       storage.setHours(start_time_Hourd + 8, start_time_Minute);
       endstorage.setHours(end_time_Hourd + 8, end_time_Minute);
+      console.log(storage, endstorage);
       datelest.push({
         start_date: storage.toISOString().replace("T", " ").slice(0, -5),
         end_date: endstorage.toISOString().replace("T", " ").slice(0, -5),
@@ -263,11 +268,9 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
 });
 
 function AddStrings(a, b, c, d, e, f, end) {
-  return `("${a}", "${b}", ${c == null ? null : '"' + c + '"'}, ${
-    d == null ? null : '"' + d + '"'
-  }, ${e == null ? null : '"' + e + '"'}, ${
-    f == null ? null : '"' + f + '"'
-  })${end}`;
+  return `("${a}", "${b}", ${c == null ? null : '"' + c + '"'}, ${d == null ? null : '"' + d + '"'
+    }, ${e == null ? null : '"' + e + '"'}, ${f == null ? null : '"' + f + '"'
+    })${end}`;
 }
 
 module.exports = router;
