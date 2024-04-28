@@ -4,12 +4,13 @@ const db = require("../models");
 const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
 const { google } = require("googleapis");
-const key = require("../ardent-stacker-403709-2229d94760d5.json");
+const key = require("../tmu-ge-2b23b3dcba6d.json");
+const axios = require('axios');
 
 const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, [
   "https://www.googleapis.com/auth/calendar",
 ]);
-
+const CALENDAR = process.env.DATABASE_CALENDARID;
 const sequelize = new Sequelize(
   process.env.DATABASE_NAME,
   process.env.DATABASE_USER,
@@ -17,6 +18,7 @@ const sequelize = new Sequelize(
   {
     host: "localhost",
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    timezone: '+08:00',
   }
 );
 router.use((req, res, next) => {
@@ -61,57 +63,68 @@ router.post("/addNewOrder", async (req, res) => {
   try {
     const status = 1;
     const warning = 0;
+    let examinetime = new Date(borrow_start);
+    var currentDate = new Date();
+    if (examinetime < currentDate) {
+      return res
+        .status(500)
+        .send({ message: "開始時間必須超過現在時間!!", errcode: -100020 });
+    }
     regular
       .CheckToken(token)
       .then(async (e) => {
         if (e != 0) {
-          console.log(item_id);
-          const examineValues = [borrow_start, borrow_end, role_id, item_id];
+          let dats = [{
+            "start_date": borrow_start,
+            "end_date": borrow_end
+          }]
+          let CommuteTime = [];
+          await axios.post('https://ge-rent.tmu.edu.tw/manage/callback_api/get_off_hour',
+            dats
+          )
+            .then(function (response) {
+              CommuteTime = response.data.result[0];
+            })
+            .catch(function (errors) {
+              return res
+                .status(500)
+                .send({ message: "使用者登入失敗", error: errors.toString() });
+            });
+          const examineValues = [borrow_start, borrow_end, CommuteTime[0][0], CommuteTime[0][1], CommuteTime[1][0], CommuteTime[1][1], role_id, item_id];
           await sequelize.query(`
           START TRANSACTION;
       `);
-          const examineSQL = `SELECT
-          items.id,
-          items.name,
-          items.model,
-          items.img_path,
-          items.note,
-          items.category_id,
-          items_category.category_name,
-          FORMAT (
-              (
-              SELECT
-                  COUNT(*) 
-              FROM
-                  borrow_order_item 
-              WHERE
-                  borrow_order_item.borrow_end > ? 
-                  AND borrow_order_item.borrow_start < ? AND borrow_order_item.item_id = items.id AND borrow_order_item.STATUS > 0 
-              ),
-              0 
-          ) AS duplicated,
-          FORMAT (
-              (
-              SELECT
-                  COUNT(*) 
-              FROM
-                  borrow_order_item 
-              WHERE
-                  borrow_order_item.borrow_end > NULL 
-                  AND borrow_order_item.borrow_start < NULL AND borrow_order_item.item_id = items.id AND borrow_order_item.STATUS > 0 
-              ),
-              0 
-          ) AS off_hour_times,
-          items.borrow_times_off_hour 
-      FROM
-          items
-          JOIN items_category ON items.category_id = items_category.id
-          JOIN role_permission_relation ON role_permission_relation.role_id = ? 
-          AND role_permission_relation.permission_id = items.borrow_permission_id 
-      WHERE
-      items.id IN (?) 
-          AND items.available = 1
-          AND items.deleted_at IS NULL
+          const examineSQL = `SELECT items.id, items.name, items.model, items.img_path, items.note, items.category_id, items_category.category_name, (
+            SELECT COUNT(*)
+                FROM borrow_order_item
+                WHERE borrow_order_item.borrow_end > ?
+                    AND borrow_order_item.borrow_start < ?
+                    AND borrow_order_item.item_id = items.id
+                    AND borrow_order_item.status > 0
+            ) AS duplicated, IF((
+            SELECT COUNT(*)
+                FROM borrow_order_item
+                WHERE borrow_order_item.borrow_end > ?
+                    AND borrow_order_item.borrow_start < ?
+                    AND borrow_order_item.item_id = items.id
+                    AND borrow_order_item.status > 0
+            ) >= items.borrow_times_off_hour OR (
+            SELECT COUNT(*)
+                FROM borrow_order_item
+                WHERE borrow_order_item.borrow_end > ?
+                    AND borrow_order_item.borrow_start < ?
+                    AND borrow_order_item.item_id = items.id
+                    AND borrow_order_item.status > 0
+            ) >= items.borrow_times_off_hour, 1, 0) AS off_hour_times_over
+        FROM items
+        JOIN items_category
+            ON items.category_id = items_category.id
+        JOIN role_permission_relation
+            ON role_permission_relation.role_id =  ? 
+                AND role_permission_relation.permission_id = items.borrow_permission_id
+        WHERE   items.id IN (?) 
+            AND items.available = 1
+            AND items.deleted_at IS NULL
           FOR UPDATE;
           `;
           const examine = await sequelize.query(examineSQL, {
@@ -121,7 +134,7 @@ router.post("/addNewOrder", async (req, res) => {
           examine[0].forEach((exa) => {
             console.log(exa);
             if (
-              exa.off_hour_times < exa.borrow_times_off_hour &&
+              exa.off_hour_times_over == 0 &&
               exa.duplicated == 0
             ) {
               Comparison.push(exa.id);
@@ -199,7 +212,7 @@ router.post("/addNewOrder", async (req, res) => {
                 });
                 calendar.events.insert(
                   {
-                    calendarId: "samuel00410@gmail.com",
+                    calendarId: CALENDAR,
                     resource: inseData,
                   },
                   (err, res) => {

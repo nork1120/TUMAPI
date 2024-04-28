@@ -4,11 +4,13 @@ const db = require("../models");
 const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
 const { google } = require("googleapis");
-const key = require("../ardent-stacker-403709-2229d94760d5.json");
+const key = require("../tmu-ge-2b23b3dcba6d.json");
+const axios = require('axios');
 
 const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, [
   "https://www.googleapis.com/auth/calendar",
 ]);
+const CALENDAR = process.env.DATABASE_CALENDARID;
 
 router.use((req, res, next) => {
   console.log("正在經過新增訂單Middleware...");
@@ -45,6 +47,7 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
     {
       host: "localhost",
       dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+      timezone: '+08:00',
     }
   );
   // 新增訂單到租借名單(borrow_order資料表)
@@ -64,6 +67,17 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
     role_id,
   } = req.body;
 
+  let nputstartDate = new Date(borrow_start);
+  let inputstartDate = nputstartDate.setHours(
+    start_time_Hourd,
+    start_time_Minute
+  );
+  let setNowDate = new Date();
+  if (inputstartDate < setNowDate) {
+    return res
+      .status(500)
+      .send({ message: "開始時間必須超過現在時間!!", errcode: -100020 });
+  }
   let a = [1, 2, 3]
   let b = a;
   b[0] = b[0] + 1
@@ -92,6 +106,20 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
       .CheckToken(token)
       .then(async (e) => {
         if (e != 0) {
+          console.log("測試!!");
+          let CommuteTimelest = [];
+          await axios.post('https://ge-rent.tmu.edu.tw/manage/callback_api/get_off_hour',
+            datelest
+          )
+            .then(function (response) {
+              CommuteTimelest = response.data.result
+            })
+            .catch(function (errors) {
+              console.log(errors, "測試~~~~~");
+              return res
+                .status(500)
+                .send({ message: "使用者登入失敗", error: errors.toString() });
+            });
           // 計算 borrow_deadline (借用起始期限)
           await sequelize.query(`
           START TRANSACTION;
@@ -112,10 +140,10 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
             profileValues += AddStrings(
               datelest[index].start_date,
               datelest[index].end_date,
-              null,
-              null,
-              null,
-              null,
+              CommuteTimelest[index][0][0],
+              CommuteTimelest[index][0][1],
+              CommuteTimelest[index][1][0],
+              CommuteTimelest[index][1][1],
               datelest.length - 1 == index ? ";" : ","
             );
           }
@@ -232,7 +260,7 @@ router.post("/addCycNewOrderRoutes", async (req, res) => {
                   });
                   calendar.events.insert(
                     {
-                      calendarId: "samuel00410@gmail.com",
+                      calendarId: CALENDAR,
                       resource: inseData,
                     },
                     (err, res) => {

@@ -11,13 +11,14 @@ const sequelize = new Sequelize(
   {
     host: "localhost",
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    timezone: '+08:00',
   }
 );
 // api範例
 // id:"1"
 router.post("/ItemSearch", async (req, res) => {
   const { token } = req.body;
-  
+
   regular
     .CheckToken(token)
     .then(async (e) => {

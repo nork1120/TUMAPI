@@ -24,6 +24,7 @@ const sequelize = new Sequelize(
   {
     host: "localhost",
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    timezone: '+08:00',
   }
 );
 
@@ -56,11 +57,12 @@ router.post("/register", async (req, res) => {
     phone,
     email,
     student_no,
+    identity
   } = req.body;
 
   try {
     // 查詢 department_id 對應的 category
-    const departmentQuery = `SELECT category FROM department WHERE id = ?`;
+    const departmentQuery = `SELECT type_id FROM department WHERE id = ?`;
 
     // 查詢 department_id輸入值 所對應到的 department資料表的 category欄位值
     const department = await sequelize.query(departmentQuery, {
@@ -69,20 +71,20 @@ router.post("/register", async (req, res) => {
     });
 
     // 如果 department_id 對應的 category 為 1，則將 student_no 設為 null
-    if (department[0].category == 1) {
+    if (department[0].type_id == 1 || department[0].type_id == 2) {
       student_no = null;
     }
 
     // 驗證使用者註冊資料是否符合規範
     const { error } = registerValidation(req.body, department[0].category);
     if (error) {
-      return res.status(200).send(error.details[0].message);
+      return res.status(500).send({ message: error.details[0].message, errcode: -100001 });
     }
 
     // 將密碼加鹽
     let hashPassword = await bcrypt.hash(password, saltRounds);
 
-    const insertQuery = `INSERT INTO user (username, password, real_name, department_id, phone, email, student_no) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const insertQuery = `INSERT INTO user (username, password, real_name, department_id, phone, email, student_no,identity) VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
     const profileValues = [
       username,
       hashPassword,
@@ -91,6 +93,7 @@ router.post("/register", async (req, res) => {
       phone,
       email,
       student_no,
+      identity
     ];
     // 新增 用戶 資料
     const [insertResult] = await sequelize.query(insertQuery, {
@@ -101,7 +104,7 @@ router.post("/register", async (req, res) => {
     // 獲取剛剛插入的用戶ID
     const userId = insertResult[0];
 
-    return res.send({ message: "使用者註冊成功!" });
+    return res.status(200).send({ message: "使用者註冊成功!!!!" });
   } catch (e) {
     if (e.toString() == "SequelizeUniqueConstraintError: Validation error") {
       return res.status(500).send({ message: "帳號重複", error: e.toString() });
@@ -127,7 +130,6 @@ router.post("/login", async (req, res) => {
       logger.warn("驗證失敗!使用者的資料不符合規範。");
       return res.status(400).send(error.details[0].message);
     }
-
     // 查看是否有使用者名稱
     // const userExist = await User.findOne({ where: { username: username } });
     const query = `SELECT * FROM user WHERE username = ? LIMIT 1`; // 使用原生 SQL 查詢來查找使用者
@@ -262,9 +264,18 @@ router.post("/find-user", async (req, res) => {
     .then(async (e) => {
       try {
         const query = `
-        SELECT real_name,department_id,role_id,phone,email
-        FROM user
-        WHERE id=?;
+        SELECT user
+	.real_name,
+	user.department_id,
+	user.role_id,
+	user.phone,
+	user.email,
+	role.NAME AS role_name
+	
+FROM
+user JOIN role ON user.role_id = role.id 
+WHERE
+user.id = ?;
       `;
         console.log(e);
         // 查詢該id的用戶資訊
@@ -282,7 +293,7 @@ router.post("/find-user", async (req, res) => {
         return res.send({ message: "找到的使用者資料:", data: findUser });
       } catch (e) {
         console.log(e);
-        return res.status(500).send("搜尋使用者失敗。");
+        return res.status(500).send({ message: "搜尋使用者失敗。", data: e });
       }
     })
     .catch((err) => {

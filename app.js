@@ -7,6 +7,7 @@ const ClassroomSearch = require("./API/ClassroomSearch");
 const addNewOrderRoutes = require("./API/addNewOrderRoutes");
 const addCycNewOrderRoutes = require("./API/addCycNewOrderRoutes");
 const GetAnnouncement = require("./API/GetAnnouncement");
+const GetUnit = require("./API/getUnit");
 const userRoutes = require("./API/userRoutes");
 const cors = require("cors");
 const app = express();
@@ -25,11 +26,13 @@ const sequelize = new Sequelize(
   {
     host: "localhost",
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    timezone: '+08:00',
   }
 );
 //
 app.use("/API/search", itemSearch);
 app.use("/API/search", GetAnnouncement);
+app.use("/API/search", GetUnit);
 app.use("/API/search", itemDataSearch);
 app.use("/API/search", ClassroomSearch);
 app.use("/API/CycSearch", itemCycDataSearch);

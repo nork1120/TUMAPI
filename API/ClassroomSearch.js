@@ -3,14 +3,6 @@ const router = express.Router();
 const { QueryTypes, Sequelize } = require("sequelize");
 const { regular } = require("../sharedMethod/sharedMethod");
 var moment = require("moment");
-
-// require("moment/locale/zh-tw");
-// moment.locale("zh-tw");
-// const sequelize = new Sequelize("tmu", "root", "nork1120", {
-//     host: "localhost",
-//     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
-// }
-// );
 const sequelize = new Sequelize(
   process.env.DATABASE_NAME,
   process.env.DATABASE_USER,
@@ -21,8 +13,6 @@ const sequelize = new Sequelize(
   }
 );
 
-// api範例
-// id:"1"
 
 router.post("/ClassroomSearch", async (req, res) => {
   const { token } = req.body;
@@ -70,9 +60,11 @@ router.post("/ClassroomsOrItems", async (req, res) => {
     .CheckToken(token)
     .then(async (e) => {
       // 確保提供了所有必要的參數
-      console.log(e);
+      if (e == 0) {
+        return res.status(200).send({ message: "token失效" });
+      }
       try {
-        const searchQuery = `SELECT * FROM borrow_order WHERE user_id = ? AND borrow_type = ?`;
+        const searchQuery = `SELECT * FROM borrow_order WHERE user_id = ? AND borrow_type = ? ORDER BY id DESC`;
         const borrowValues = [e, borrow_type];
 
         // 查詢該使用者所租借的全部(教室or器材)
@@ -146,9 +138,8 @@ router.post("/borrow-details", async (req, res) => {
         }
         const { borrow_start, borrow_end, memo } = findResults[0];
         return res.send({
-          message: `查询到的借用单詳情，借用類型為${
-            borrow_type === 0 ? "" : "教室"
-          }`,
+          message: `查询到的借用单詳情，借用類型為${borrow_type === 0 ? "" : "教室"
+            }`,
           data: {
             list: findResults,
             share: {

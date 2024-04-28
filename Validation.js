@@ -6,13 +6,13 @@ const registerValidation = (data, departmentCategory) => {
   const studentNoRule =
     departmentCategory === 2
       ? Joi.string()
-          .pattern(/^\d{12}$/)
-          .required()
-          .messages({
-            "string.pattern.base": "學號必須為12位數字",
-            "string.empty": "學號不能為空。",
-            "any.required": "學號是必填欄位！",
-          })
+        .pattern(/^\d{12}$/)
+        .required()
+        .messages({
+          "string.pattern.base": "學號必須為12位數字",
+          "string.empty": "學號不能為空。",
+          "any.required": "學號是必填欄位！",
+        })
       : Joi.string().optional().allow(null);
 
   const schema = Joi.object({
@@ -61,6 +61,7 @@ const registerValidation = (data, departmentCategory) => {
       "any.required": "信箱是必填欄位!",
     }),
     student_no: studentNoRule,
+    identity: Joi.number().integer().required(),
   });
 
   const validation = schema.validate(data, { abortEarly: false });

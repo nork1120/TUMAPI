@@ -8,6 +8,7 @@ const sequelizess = new Sequelize(
   {
     host: "localhost",
     dialect: "mysql", // 或其他數據庫類型，如 'postgres', 'sqlite', 'mssql'
+    timezone: '+08:00',
   }
 );
 router.post("/announcement", async (req, res) => {
